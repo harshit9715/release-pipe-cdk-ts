@@ -55,6 +55,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install cdk
         run: npm i -g aws-cdk
+      - name: install deps
+        run: npm ci
       - name: CDK Synth
         id: cdk-synth-step
         run: cdk synth
@@ -73,6 +75,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install cdk
         run: npm i -g aws-cdk
+      - name: install deps
+        run: npm ci
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
