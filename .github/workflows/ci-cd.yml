@@ -86,9 +86,7 @@ jobs:
 
       - name: CDK Diff PR run
         id: cdk-diff-step
-        run: |
-          echo "diff"
-          # cdk diff
+        run: cdk diff
     
       # - name: Comment on PR
       #   run: |
