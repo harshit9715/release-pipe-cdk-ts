@@ -1,0 +1,121 @@
+# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
+# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
+
+name: CICD
+
+on:
+  push:
+    branches: [ main ]
+#   release:
+#     types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Build lambda code
+        working-directory: src/functions
+        run: tsc */*.ts
+
+  validate_cdk_tests:
+    name: Run Infrastructure test
+    runs-on: ubuntu-latest
+    environment: 
+      name: dev
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: test lambda code
+        run: |
+          npm ci
+          npm test
+  
+  validate_stack:
+    name: Synth and validate CDK
+    needs: [validate_cdk_tests]
+    runs-on: ubuntu-latest
+    environment: 
+      name: dev
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install cdk
+        run: npm i -g aws-cdk
+      - name: CDK Synth
+        id: cdk-synth-step
+        run: cdk synth
+
+  list_changes:
+    name: List Changes in Stack
+    needs: [build, validate_stack]
+    runs-on: ubuntu-latest
+    environment: 
+      name: dev
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install cdk
+        run: npm i -g aws-cdk
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: CDK Diff PR run
+        id: cdk-diff-step
+        run: |
+          echo "diff"
+          # cdk diff
+    
+      # - name: Comment on PR
+      #   run: |
+      #     echo ${{steps.cdk-diff-step.outputs.cdk-diff}}
+  deploy_changes:
+    name: Deploy Changes to AWS
+    needs: [list_changes]
+    runs-on: ubuntu-latest
+    environment: 
+      name: prod
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install cdk
+        run: npm i -g aws-cdk
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: CDK Deploy
+        id: cdk-deploy-step
+        run: |
+          # cdk deploy --require-approval never
+          echo "deployed"
+    
+      # - name: Comment on PR
+      #   run: |
+      #     echo ${{steps.cdk-diff-step.outputs.cdk-diff}}
