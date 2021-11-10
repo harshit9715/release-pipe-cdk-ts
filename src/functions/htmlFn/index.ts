@@ -1,6 +1,6 @@
 
 const handler = async function (event: any, context: any) {
-    const textColor = 'yellow';
+    const textColor = 'red';
     
     return {
         statusCode: 200,
