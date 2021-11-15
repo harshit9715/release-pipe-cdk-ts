@@ -21,9 +21,20 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: |
+            **/node_modules
+            **/.eslintcache
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
       - name: Build lambda code
         working-directory: src/functions
-        run: npm i && tsc */*.ts
+        run: yarn install --frozen-lockfile && tsc */*.ts
 
   validate_cdk_tests:
     name: Run Infrastructure test
@@ -36,9 +47,20 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: |
+            **/node_modules
+            **/.eslintcache
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
       - name: test lambda code
         run: |
-          npm ci
+          yarn install --frozen-lockfile
           npm test
   
   validate_stack:
@@ -55,8 +77,19 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install cdk
         run: npm i -g aws-cdk
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: |
+            **/node_modules
+            **/.eslintcache
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
       - name: install deps
-        run: npm ci
+        run: yarn install --frozen-lockfile
       - name: CDK Synth
         id: cdk-synth-step
         run: cdk synth
@@ -75,8 +108,19 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install cdk
         run: npm i -g aws-cdk
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: |
+            **/node_modules
+            **/.eslintcache
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
       - name: install deps
-        run: npm ci
+        run: yarn install --frozen-lockfile
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -105,6 +149,17 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install cdk
         run: npm i -g aws-cdk
+      - uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: |
+            **/node_modules
+            **/.eslintcache
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -112,7 +167,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
       - name: install deps
-        run: npm ci
+        run: yarn install --frozen-lockfile
   
       - name: Build lambda code
         working-directory: src/functions
